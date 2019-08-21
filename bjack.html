@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -8,57 +8,64 @@
 <body>
     <script src="graphics.js"></script>
     <script>
-		var g = new Graphics(800, 600);
-		var deck = new Array(51);
-		var deckindex = 0;
-		
-		var userhand = new Array(5);
-		var dealerhand = new Array(5);
-		
-		var values = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-		var suits = ["hearts", "diamonds", "clubs", "spades"];
+        var g = new Graphics(800, 600);
+        var deck = new Array(51);
+        var deckindex = 0;
 
-		for (var i = 0; i < values.length; i++) {
-			for (var j = 0; j < suits.length; j++) {
-				deck[deckindex] = new Card(suits[j], values[i]);
-				deckindex++;
-			}
-		}
-		
-		shuffleDeck();
-		console.log(deck);
-		
+        var userhand = new Array(5);
+        var dealerhand = new Array(5);
+
+        var values = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+        var suits = ["hearts", "diamonds", "clubs", "spades"];
+
+        for (var i = 0; i < values.length; i++) {
+            for (var j = 0; j < suits.length; j++) {
+                deck[deckindex] = new Card(suits[j], values[i]);
+                deckindex++;
+            }
+        }
+
+        shuffleDeck();
+        console.log(deck);
+        userhand[0] = deck[0];
+        userhand[1] = deck[1];
+        //userhand[2] = deck[2];
+
         g.setColor("rgb(20, 20, 20)");
         g.fillRect(0, 0, 800, 600);
 
         drawTable();
+        renderCards();
 
-        var test = new Card("hearts", 10);
-        var test2 = new Card("clubs", 8);
-        test.render(200, 350, false);
-        test2.render(400, 350, false);
+        console.log(bust(userhand));
+
+        function renderCards() {
+            for (var i = 0; i < getOccupiedSlotsInHand(userhand); i++) {
+                userhand[i].render(((i+1)*170)-30, 350, false);
+            }
+        }
 
         function drawTable() {
             g.setColor("green");
             g.drawPolygon([0, 600, 25, 300, 775, 300, 800, 600]);
-			g.setColor("blue");
-			g.drawPolygon([620, 500, 630, 380, 730, 380, 740, 500]);
+            g.setColor("blue");
+            g.drawPolygon([620, 500, 630, 380, 730, 380, 740, 500]);
         }
-		
-		function shuffleDeck() {
-			for (var i = 0; i < 1000; i++) {
-            var location1 = Math.floor((Math.random() * deck.length));
-            var location2 = Math.floor((Math.random() * deck.length));
-            var tmp = deck[location1];
 
-            deck[location1] = deck[location2];
-            deck[location2] = tmp;
-			}
-		}
-		
-		g.setColor("red");
-		g.setFont("24px sans");
-		g.drawString("Opponent:", 5, 24);
+        function shuffleDeck() {
+            for (var i = 0; i < 1000; i++) {
+                var location1 = Math.floor((Math.random() * deck.length));
+                var location2 = Math.floor((Math.random() * deck.length));
+                var tmp = deck[location1];
+
+                deck[location1] = deck[location2];
+                deck[location2] = tmp;
+            }
+        }
+
+        g.setColor("red");
+        g.setFont("24px sans");
+        g.drawString("Opponent:", 5, 24);
 
 
         function Card(suit, value) {
@@ -67,7 +74,7 @@
 
             this.render = function (x, y, facing) {
                 g.setColor("rgba(0, 0, 0, 0.3)");
-                g.fillOval(x-20, y+190, 190, 20);
+                g.fillOval(x - 20, y + 190, 190, 20);
                 if (facing) {
                     g.setColor("blue");
                     g.fillRect(x, y, 150, 200); // will eventually replace with a texture, hopefully
@@ -88,24 +95,51 @@
                     g.fillRect(x + 10, y + 10, 20, 20);
                     g.drawString(value, x + 35, y + 20);
                 }
-				g.setColor("black");
-				g.setLineWidth(2);
-				g.drawRect(x, y, 150, 200);
+                g.setColor("black");
+                g.setLineWidth(2);
+                g.drawRect(x, y, 150, 200);
             };
         }
-		
-		function calculateBust(hand) {
-			var sum = 0;
-			for (var i = 0; i < hand.length; i++) {
-				if (hand[i].value == "A" && sum+hand[i].value > 21) {
-					sum++;
-				} else if (hand[i].value == "A" && sum+hand[i].value < 21) {
-					sum += 11;
-				} else {
-					sum += hand[i].value;
-				}
-			}
-		}
+
+        function bust(hand) {
+            var sum = 0;
+            for (var i = 0; i < getOccupiedSlotsInHand(userhand); i++) {
+                switch (hand[i].value) {
+                    case "A":
+                        sum += (sum + 11 > 21) ? 1 : 11;
+                        break;
+                    case "J":
+                    case "Q":
+                    case "K":
+                    case "10":
+                        sum += 10;
+                        break;
+                    default:
+                        sum += parseInt(hand[i].value);
+                        break;
+                }
+            }
+
+            if (sum > 21) {
+                return true;
+            }
+            return false;
+        }
+
+        function getOccupiedSlotsInHand(hand) {
+            var sum = 0;
+            for (var i = 0; i < hand.length; i++) {
+                if (hand[i] != null) {
+                    sum++;
+                }
+            }
+            return sum;
+        }
+
+        g.canvas.onmousedown = function (e) {
+            console.log(g.ctx.getImageData(e.offsetX, e.offsetY, 1, 1).data[2] == 255);
+            console.log(e.offsetX + ", " + e.offsetY);
+        }
     </script>
 </body>
 </html>
