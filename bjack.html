@@ -31,25 +31,24 @@
         userhand[1] = deck[1];
         //userhand[2] = deck[2];
 
-        g.setColor("rgb(20, 20, 20)");
-        g.fillRect(0, 0, 800, 600);
-
-        drawTable();
-        renderCards();
-
         console.log(bust(userhand));
 
-        function renderCards() {
-            for (var i = 0; i < getOccupiedSlotsInHand(userhand); i++) {
-                userhand[i].render(((i+1)*170)-30, 350, false);
-            }
-        }
-
-        function drawTable() {
+        function render() {
+			g.setColor("rgb(20, 20, 20)");
+			g.fillRect(0, 0, 800, 600);
+		
             g.setColor("green");
             g.drawPolygon([0, 600, 25, 300, 775, 300, 800, 600]);
             g.setColor("blue");
             g.drawPolygon([620, 500, 630, 380, 730, 380, 740, 500]);
+			
+			renderCards();
+        }
+		
+		function renderCards() {
+            for (var i = 0; i < getOccupiedSlotsInHand(userhand); i++) {
+                userhand[i].render(((i+1)*170)-30, 350, false);
+			}
         }
 
         function shuffleDeck() {
@@ -61,6 +60,10 @@
                 deck[location1] = deck[location2];
                 deck[location2] = tmp;
             }
+        }
+
+        function dealCard(hand) {
+
         }
 
         g.setColor("red");
@@ -126,7 +129,14 @@
             return false;
         }
 
-        function getOccupiedSlotsInHand(hand) {
+        g.canvas.onmousedown = function (e) {
+            if(g.ctx.getImageData(e.offsetX, e.offsetY, 1, 1).data[2] == 255) {
+				userhand[getOccupiedSlotsInHand(userhand)+1] = deck[2];
+			}
+            console.log(e.offsetX + ", " + e.offsetY);
+        }
+		
+		function getOccupiedSlotsInHand(hand) {
             var sum = 0;
             for (var i = 0; i < hand.length; i++) {
                 if (hand[i] != null) {
@@ -135,11 +145,13 @@
             }
             return sum;
         }
-
-        g.canvas.onmousedown = function (e) {
-            console.log(g.ctx.getImageData(e.offsetX, e.offsetY, 1, 1).data[2] == 255);
-            console.log(e.offsetX + ", " + e.offsetY);
-        }
+		
+		function tick() {
+			render();
+			window.requestAnimationFrame(tick);
+		}
+		
+		window.requestAnimationFrame(tick);
     </script>
 </body>
 </html>
