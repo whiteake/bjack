@@ -15,9 +15,9 @@ function Graphics(cwidth, cheight) {
     this.ctx = ctx;
 }
 
-Graphics.prototype.setColor = function (color) {
-    ctx.fillStyle = color;
-},
+    Graphics.prototype.setColor = function (color) {
+        ctx.fillStyle = color;
+    },
     Graphics.prototype.drawRect = function (x, y, width, height) {
         ctx.strokeRect(x, y, width, height);
     },
@@ -80,12 +80,19 @@ Graphics.prototype.setColor = function (color) {
     Graphics.prototype.getStringWidth = function (text) {
         return Math.floor(ctx.measureText(text).width);
     },
-    Graphics.prototype.drawPolygon = function (poly) {
+    Graphics.prototype.fillPolygon = function (poly) {
         ctx.beginPath();
         ctx.moveTo(poly[0], poly[1]);
         for (item = 2; item < poly.length - 1; item += 2) { ctx.lineTo(poly[item], poly[item + 1]) }
         ctx.closePath();
         ctx.fill();
+    },
+    Graphics.prototype.drawPolygon = function (poly) {
+        ctx.beginPath();
+        ctx.moveTo(poly[0], poly[1]);
+        for (item = 2; item < poly.length - 1; item += 2) { ctx.lineTo(poly[item], poly[item + 1]) }
+        ctx.closePath();
+        ctx.stroke();
     },
     Graphics.prototype.setLineWidth = function (nwidth) {
         ctx.lineWidth = nwidth;

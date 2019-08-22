@@ -15,8 +15,12 @@
         var userhand = new Array(5);
         var dealerhand = new Array(5);
 
+        var screenDisplaying = false;
+
         var values = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
         var suits = ["hearts", "diamonds", "clubs", "spades"];
+
+        var overlays = [new OverlayScreen("natural"), new OverlayScreen("bust"), new OverlayScreen("fold")];
 
         for (var i = 0; i < values.length; i++) {
             for (var j = 0; j < suits.length; j++) {
@@ -26,29 +30,39 @@
         }
 
         shuffleDeck();
-        console.log(deck);
-        userhand[0] = deck[0];
-        userhand[1] = deck[1];
         //userhand[2] = deck[2];
 
         console.log(bust(userhand));
 
         function render() {
-			g.setColor("rgb(20, 20, 20)");
-			g.fillRect(0, 0, 800, 600);
-		
+            g.setColor("rgb(20, 20, 20)");
+            g.fillRect(0, 0, 800, 600);
+
             g.setColor("green");
-            g.drawPolygon([0, 600, 25, 300, 775, 300, 800, 600]);
+            g.fillPolygon([0, 600, 25, 300, 775, 300, 800, 600]);
             g.setColor("blue");
+            g.fillPolygon([620, 500, 630, 380, 730, 380, 740, 500]);
+            g.setColor("black");
+            g.drawPolygon([0, 600, 25, 300, 775, 300, 800, 600]);
             g.drawPolygon([620, 500, 630, 380, 730, 380, 740, 500]);
-			
-			renderCards();
+
+            renderCards();
+
+            g.setColor("red");
+            g.setFont("24px sans");
+            g.drawString("Opponent:", 5, 24);
+
+            for (var i = 0; i < overlays.length; i++) {
+                if (overlays[i].screenDisplaying) {
+                    overlays[i].renderOverlay();
+                }
+            }
         }
-		
-		function renderCards() {
+
+        function renderCards() {
             for (var i = 0; i < getOccupiedSlotsInHand(userhand); i++) {
-                userhand[i].render(((i+1)*170)-30, 350, false);
-			}
+                userhand[i].render(((i + 1) * 170) - 50, 350, false);
+            }
         }
 
         function shuffleDeck() {
@@ -66,9 +80,7 @@
 
         }
 
-        g.setColor("red");
-        g.setFont("24px sans");
-        g.drawString("Opponent:", 5, 24);
+
 
 
         function Card(suit, value) {
@@ -76,6 +88,8 @@
             this.value = value;
 
             this.render = function (x, y, facing) {
+                this.x = x;
+                this.y = y;
                 g.setColor("rgba(0, 0, 0, 0.3)");
                 g.fillOval(x - 20, y + 190, 190, 20);
                 if (facing) {
@@ -102,9 +116,38 @@
                 g.setLineWidth(2);
                 g.drawRect(x, y, 150, 200);
             };
+
+            this.getX = function () {
+                return this.x;
+            }
+
+            this.getY = function () {
+                return this.y;
+            }
+        }
+
+        function OverlayScreen(text) {
+            this.text = text;
+            this.screenDisplaying = false;
+
+            this.renderOverlay = function () {
+                this.screenDisplaying = true;
+                g.setColor("rgba(0, 0, 0, 0.5)");
+                g.fillRect(0, 0, 800, 600);
+                g.setColor("red");
+                g.drawString(this.text, 100, 100);
+            }
         }
 
         function bust(hand) {
+            return getSumInHand(userhand) > 21;
+        }
+
+        function natural(hand) {
+            return getSumInHand(userhand) == 21;
+        }
+
+        function getSumInHand(hand) {
             var sum = 0;
             for (var i = 0; i < getOccupiedSlotsInHand(userhand); i++) {
                 switch (hand[i].value) {
@@ -122,21 +165,26 @@
                         break;
                 }
             }
-
-            if (sum > 21) {
-                return true;
-            }
-            return false;
+            return sum;
         }
 
         g.canvas.onmousedown = function (e) {
-            if(g.ctx.getImageData(e.offsetX, e.offsetY, 1, 1).data[2] == 255) {
-				userhand[getOccupiedSlotsInHand(userhand)+1] = deck[2];
-			}
-            console.log(e.offsetX + ", " + e.offsetY);
+            switch (g.ctx.getImageData(e.offsetX, e.offsetY, 1, 1).data[1]) {
+                case 128:
+                    overlays[2].screenDisplaying = true;
+                    break;
+                case 0:
+                    userhand[getOccupiedSlotsInHand(userhand)] = deck[getOccupiedSlotsInHand(userhand)];
+                    if (bust(userhand)) {
+                        overlays[1].screenDisplaying = true;
+                    } else if (natural(userhand)) {
+                        overlays[0].screenDisplaying = true;
+                    }
+                    break;
+            }
         }
-		
-		function getOccupiedSlotsInHand(hand) {
+
+        function getOccupiedSlotsInHand(hand) {
             var sum = 0;
             for (var i = 0; i < hand.length; i++) {
                 if (hand[i] != null) {
@@ -145,13 +193,13 @@
             }
             return sum;
         }
-		
-		function tick() {
-			render();
-			window.requestAnimationFrame(tick);
-		}
-		
-		window.requestAnimationFrame(tick);
+
+        function tick() {
+            render();
+            window.requestAnimationFrame(tick);
+        }
+
+        window.requestAnimationFrame(tick);
     </script>
 </body>
 </html>
