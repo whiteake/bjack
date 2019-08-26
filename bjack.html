@@ -22,6 +22,10 @@
 
         var overlays = [new OverlayScreen("natural"), new OverlayScreen("bust"), new OverlayScreen("fold")];
 
+        var turn = true;
+
+        var currentCard = 0;
+
         for (var i = 0; i < values.length; i++) {
             for (var j = 0; j < suits.length; j++) {
                 deck[deckindex] = new Card(suits[j], values[i]);
@@ -30,7 +34,6 @@
         }
 
         shuffleDeck();
-        //userhand[2] = deck[2];
 
         console.log(bust(userhand));
 
@@ -46,11 +49,12 @@
             g.drawPolygon([0, 600, 25, 300, 775, 300, 800, 600]);
             g.drawPolygon([620, 500, 630, 380, 730, 380, 740, 500]);
 
+            renderOpponentCards();
             renderCards();
+
 
             g.setColor("red");
             g.setFont("24px sans");
-            g.drawString("Opponent:", 5, 24);
 
             for (var i = 0; i < overlays.length; i++) {
                 if (overlays[i].screenDisplaying) {
@@ -65,6 +69,12 @@
             }
         }
 
+        function renderOpponentCards() {
+            for (var i = 0; i < getOccupiedSlotsInHand(dealerhand); i++) {
+                dealerhand[i].renderFar(800 - (((i + 1) * 170))-130, 250);
+            }
+        }
+
         function shuffleDeck() {
             for (var i = 0; i < 1000; i++) {
                 var location1 = Math.floor((Math.random() * deck.length));
@@ -76,8 +86,18 @@
             }
         }
 
-        function dealCard(hand) {
+        function dealCard(number, hand, user) {
+            var cardsDealed = 0;
+            var cardTimer = setInterval(function () {
+                hand[getOccupiedSlotsInHand(hand)] = deck[currentCard];
+                currentCard++;
+                cardsDealed++;
+                if (number == cardsDealed) {
+                    clearInterval(cardTimer);
+                }
+            }, user? 0: 1000);
 
+            console.log(number + ", " + cardsDealed);
         }
 
 
@@ -116,6 +136,18 @@
                 g.setLineWidth(2);
                 g.drawRect(x, y, 150, 200);
             };
+
+            this.renderFar = function (x, y) {
+                this.x = x;
+                this.y = y;
+                g.setColor("rgba(0, 0, 0, 0.3)");
+                g.fillOval(x-20, y + 90, 120, 20);
+                g.setColor("blue");
+                g.fillRect(x, y, 75, 100);
+                g.setColor("black");
+                g.setLineWidth(2);
+                g.drawRect(x, y, 75, 100);
+            }
 
             this.getX = function () {
                 return this.x;
@@ -174,7 +206,14 @@
                     overlays[2].screenDisplaying = true;
                     break;
                 case 0:
-                    userhand[getOccupiedSlotsInHand(userhand)] = deck[getOccupiedSlotsInHand(userhand)];
+                    if (turn) {
+                        dealCard(1, userhand, true);
+                        turn = false;
+                    }
+                    if (turn == false) {
+                        dealCard(1, dealerhand, false);
+                        turn = true;
+                    }
                     if (bust(userhand)) {
                         overlays[1].screenDisplaying = true;
                     } else if (natural(userhand)) {
