@@ -12,19 +12,19 @@
         var deck = new Array(51);
         var deckindex = 0;
 
-        var userhand = new Array(5);
-        var dealerhand = new Array(5);
+        var userhand = [];
+        var dealerhand = [];
 
         var screenDisplaying = false;
 
         var values = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
         var suits = ["hearts", "diamonds", "clubs", "spades"];
 
-        var overlays = [new OverlayScreen("natural"), new OverlayScreen("bust"), new OverlayScreen("fold")];
+        var overlays = [new OverlayScreen("Natural"), new OverlayScreen("Bust"), new OverlayScreen("Fold?"), new OverlayScreen("Dealer Bust"), new OverlayScreen("Dealer Natural")];
 
         var turn = true;
 
-        var currentCard = 0;
+        var currentCard = 1;
 
         for (var i = 0; i < values.length; i++) {
             for (var j = 0; j < suits.length; j++) {
@@ -34,8 +34,6 @@
         }
 
         shuffleDeck();
-
-        console.log(bust(userhand));
 
         function render() {
             g.setColor("rgb(20, 20, 20)");
@@ -55,6 +53,8 @@
 
             g.setColor("red");
             g.setFont("24px sans");
+            g.drawString("Sum: " + getSumInHand(userhand), 0, 24);
+            g.drawString("Dealer Sum: " + getSumInHand(dealerhand), 0, 48);
 
             for (var i = 0; i < overlays.length; i++) {
                 if (overlays[i].screenDisplaying) {
@@ -64,15 +64,19 @@
         }
 
         function renderCards() {
+
             for (var i = 0; i < getOccupiedSlotsInHand(userhand); i++) {
                 userhand[i].render(((i + 1) * 170) - 50, 350, false);
             }
+
         }
 
         function renderOpponentCards() {
+
             for (var i = 0; i < getOccupiedSlotsInHand(dealerhand); i++) {
-                dealerhand[i].renderFar(800 - (((i + 1) * 170))-130, 250);
+                dealerhand[i].renderFar(800 - (((i + 1) * 170)) - 130, 250);
             }
+
         }
 
         function shuffleDeck() {
@@ -86,19 +90,15 @@
             }
         }
 
-        function dealCard(number, hand, user) {
-            var cardsDealed = 0;
-            var cardTimer = setInterval(function () {
+        /*
+        function dealCard(hand, user) {
+            var cardTimer = setTimeout(function () {
                 hand[getOccupiedSlotsInHand(hand)] = deck[currentCard];
+                console.log("Dealt " + deck[currentCard].value +  " to " + (user ? " user." : " dealer."));
                 currentCard++;
-                cardsDealed++;
-                if (number == cardsDealed) {
-                    clearInterval(cardTimer);
-                }
-            }, user? 0: 1000);
-
-            console.log(number + ", " + cardsDealed);
+            }, user ? 0 : 1000);
         }
+        */
 
 
 
@@ -141,7 +141,7 @@
                 this.x = x;
                 this.y = y;
                 g.setColor("rgba(0, 0, 0, 0.3)");
-                g.fillOval(x-20, y + 90, 120, 20);
+                g.fillOval(x - 20, y + 90, 120, 20);
                 g.setColor("blue");
                 g.fillRect(x, y, 75, 100);
                 g.setColor("black");
@@ -181,7 +181,7 @@
 
         function getSumInHand(hand) {
             var sum = 0;
-            for (var i = 0; i < getOccupiedSlotsInHand(userhand); i++) {
+            for (var i = 0; i < getOccupiedSlotsInHand(hand); i++) {
                 switch (hand[i].value) {
                     case "A":
                         sum += (sum + 11 > 21) ? 1 : 11;
@@ -197,8 +197,12 @@
                         break;
                 }
             }
+
+            //console.log("hand sum for " + getOccupiedSlotsInHand(hand) + " cards: " + sum);
             return sum;
         }
+
+        var blocking = false;
 
         g.canvas.onmousedown = function (e) {
             switch (g.ctx.getImageData(e.offsetX, e.offsetY, 1, 1).data[1]) {
@@ -206,30 +210,56 @@
                     overlays[2].screenDisplaying = true;
                     break;
                 case 0:
-                    if (turn) {
-                        dealCard(1, userhand, true);
-                        turn = false;
+                    if (!blocking) {
+                        userhand[getOccupiedSlotsInHand(userhand)] = deck[currentCard];
+                        currentCard++;
+                        blocking = true;
+                    } else {
+                        console.log("action blocked");
                     }
-                    if (turn == false) {
-                        dealCard(1, dealerhand, false);
-                        turn = true;
-                    }
+                    setTimeout(function () {
+                        dealerhand[getOccupiedSlotsInHand(dealerhand)] = deck[currentCard];
+                        currentCard++;
+                        blocking = false;
+                    }, 1000);
+
                     if (bust(userhand)) {
                         overlays[1].screenDisplaying = true;
+                        break;
                     } else if (natural(userhand)) {
                         overlays[0].screenDisplaying = true;
+                        break;
                     }
+
+                    if (bust(dealerhand)) {
+                        overlays[3].screenDisplaying = true;
+                        break;
+                    } else if (natural(dealerhand)) {
+                        overlays[4].screenDisplaying = true;
+                        break;
+                    }
+                    //dealCard(userhand, true);
+                    //dealCard(dealerhand, false);
                     break;
             }
+        }
+
+        document.onkeydown = function (e) {
+            // y = 89
+            // n = 78
+            console.log(e.which);
         }
 
         function getOccupiedSlotsInHand(hand) {
             var sum = 0;
             for (var i = 0; i < hand.length; i++) {
+                //console.log("Value for " + i + " in hand: " + hand[i].value + " " + hand[i].suit);
                 if (hand[i] != null) {
                     sum++;
                 }
             }
+
+            // console.log("hand size: " + sum);
             return sum;
         }
 
