@@ -20,7 +20,7 @@
         var values = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
         var suits = ["hearts", "diamonds", "clubs", "spades"];
 
-        var overlays = [new OverlayScreen("Natural"), new OverlayScreen("Bust"), new OverlayScreen("Fold?"), new OverlayScreen("Dealer Bust"), new OverlayScreen("Dealer Natural")];
+        var overlays = [new OverlayScreen("Natural"), new OverlayScreen("Bust"), new OverlayScreen("Fold? (Y/N)"), new OverlayScreen("Dealer Bust"), new OverlayScreen("Dealer Natural"), new OverlayScreen("Dealer Wins"), new OverlayScreen("Player Wins")];
 
         var turn = true;
 
@@ -38,7 +38,6 @@
         function render() {
             g.setColor("rgb(20, 20, 20)");
             g.fillRect(0, 0, 800, 600);
-
             g.setColor("green");
             g.fillPolygon([0, 600, 25, 300, 775, 300, 800, 600]);
             g.setColor("blue");
@@ -50,11 +49,10 @@
             renderOpponentCards();
             renderCards();
 
-
             g.setColor("red");
-            g.setFont("24px sans");
-            g.drawString("Sum: " + getSumInHand(userhand), 0, 24);
-            g.drawString("Dealer Sum: " + getSumInHand(dealerhand), 0, 48);
+            g.setFont("24px arial");
+            // g.drawString("Sum: " + getSumInHand(userhand), 0, 24);
+            // g.drawString("Dealer Sum: " + getSumInHand(dealerhand), 0, 48);
 
             for (var i = 0; i < overlays.length; i++) {
                 if (overlays[i].screenDisplaying) {
@@ -130,6 +128,7 @@
                             break;
                     }
                     g.fillRect(x + 10, y + 10, 20, 20);
+                    g.setFont("24px arial");
                     g.drawString(value, x + 35, y + 20);
                 }
                 g.setColor("black");
@@ -166,17 +165,18 @@
                 this.screenDisplaying = true;
                 g.setColor("rgba(0, 0, 0, 0.5)");
                 g.fillRect(0, 0, 800, 600);
+                g.setFont("48px arial");
                 g.setColor("red");
-                g.drawString(this.text, 100, 100);
+                g.drawString(this.text, (400 - (g.ctx.measureText(this.text).width))+150, 100);
             }
         }
 
         function bust(hand) {
-            return getSumInHand(userhand) > 21;
+            return getSumInHand(hand) > 21;
         }
 
         function natural(hand) {
-            return getSumInHand(userhand) == 21;
+            return getSumInHand(hand) == 21;
         }
 
         function getSumInHand(hand) {
@@ -219,6 +219,12 @@
                     }
                     setTimeout(function () {
                         dealerhand[getOccupiedSlotsInHand(dealerhand)] = deck[currentCard];
+                        if (bust(dealerhand)) {
+                            overlays[3].text += " (" + getSumInHand(dealerhand) + ")";
+                            overlays[3].screenDisplaying = true;
+                        } else if (natural(dealerhand)) {
+                            overlays[4].screenDisplaying = true;
+                        }
                         currentCard++;
                         blocking = false;
                     }, 1000);
@@ -231,6 +237,7 @@
                         break;
                     }
 
+                    /*
                     if (bust(dealerhand)) {
                         overlays[3].screenDisplaying = true;
                         break;
@@ -238,17 +245,37 @@
                         overlays[4].screenDisplaying = true;
                         break;
                     }
+                    */
                     //dealCard(userhand, true);
                     //dealCard(dealerhand, false);
                     break;
             }
         }
 
+
         document.onkeydown = function (e) {
             // y = 89
             // n = 78
             console.log(e.which);
+            if (overlays[2].screenDisplaying) {
+                switch (e.which) {
+                    case 89:
+                        overlays[2].screenDisplaying = false;
+                        if (getSumInHand(userhand) > getSumInHand(dealerhand)) {
+                            overlays[6].text += " (" + getSumInHand(userhand) + " vs " + getSumInHand(dealerhand) + ")";
+                            overlays[6].screenDisplaying = true;
+                        } else {
+                            overlays[5].text += " (" + getSumInHand(userhand) + " vs " + getSumInHand(dealerhand) + ")";
+                            overlays[5].screenDisplaying = true;
+                        }//?overlays[6].screenDisplaying = true : overlays[5].screenDisplaying = true;
+                        break;
+                    case 78:
+                        overlays[2].screenDisplaying = false;
+                        break;
+                }
+            }
         }
+
 
         function getOccupiedSlotsInHand(hand) {
             var sum = 0;
