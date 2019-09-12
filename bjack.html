@@ -1,10 +1,12 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+
 <head>
     <meta charset="utf-8" />
     <title></title>
 </head>
+
 <body>
     <script src="graphics.js"></script>
     <script>
@@ -23,6 +25,8 @@
         var overlays = [new OverlayScreen("Natural"), new OverlayScreen("Bust"), new OverlayScreen("Fold? (Y/N)"), new OverlayScreen("Dealer Bust"), new OverlayScreen("Dealer Natural"), new OverlayScreen("Dealer Wins"), new OverlayScreen("Player Wins")];
 
         var turn = true;
+
+        var gameover = false;
 
         var currentCard = 1;
 
@@ -167,7 +171,9 @@
                 g.fillRect(0, 0, 800, 600);
                 g.setFont("48px arial");
                 g.setColor("red");
-                g.drawString(this.text, (400 - (g.ctx.measureText(this.text).width))+150, 100);
+
+                centerString(this.text, 800, 600, 48);
+                //g.drawString(this.text, (400 - (g.ctx.measureText(this.text).width)) + 150, 100);
             }
         }
 
@@ -217,13 +223,20 @@
                     } else {
                         console.log("action blocked");
                     }
+
+
                     setTimeout(function () {
-                        dealerhand[getOccupiedSlotsInHand(dealerhand)] = deck[currentCard];
+
+                        if (gameover == false) {
+                            dealerhand[getOccupiedSlotsInHand(dealerhand)] = deck[currentCard];
+                        }
                         if (bust(dealerhand)) {
                             overlays[3].text += " (" + getSumInHand(dealerhand) + ")";
                             overlays[3].screenDisplaying = true;
+                            gameover = true;
                         } else if (natural(dealerhand)) {
                             overlays[4].screenDisplaying = true;
+                            gameover = true;
                         }
                         currentCard++;
                         blocking = false;
@@ -231,12 +244,13 @@
 
                     if (bust(userhand)) {
                         overlays[1].screenDisplaying = true;
+                        gameover = true;
                         break;
                     } else if (natural(userhand)) {
                         overlays[0].screenDisplaying = true;
+                        gameover = true;
                         break;
                     }
-
                     /*
                     if (bust(dealerhand)) {
                         overlays[3].screenDisplaying = true;
@@ -264,9 +278,11 @@
                         if (getSumInHand(userhand) > getSumInHand(dealerhand)) {
                             overlays[6].text += " (" + getSumInHand(userhand) + " vs " + getSumInHand(dealerhand) + ")";
                             overlays[6].screenDisplaying = true;
+                            gameover = true;
                         } else {
                             overlays[5].text += " (" + getSumInHand(userhand) + " vs " + getSumInHand(dealerhand) + ")";
                             overlays[5].screenDisplaying = true;
+                            gameover = true;
                         }//?overlays[6].screenDisplaying = true : overlays[5].screenDisplaying = true;
                         break;
                     case 78:
@@ -290,6 +306,12 @@
             return sum;
         }
 
+        function centerString(string, boundingSizeW, boundingSizeH, fontsize) {
+            var offsetY = ((boundingSizeH / 2) - fontsize + 12)
+            var offsetX = (boundingSizeW / 2)-string.length*9;
+            g.drawString(string, offsetX, offsetY);
+        }
+
         function tick() {
             render();
             window.requestAnimationFrame(tick);
@@ -298,4 +320,5 @@
         window.requestAnimationFrame(tick);
     </script>
 </body>
+
 </html>
