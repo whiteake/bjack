@@ -34,6 +34,22 @@
                 deckindex++;
             }
         }
+		
+		function reset() {
+			shuffleDeck();
+			userhand = [];
+			dealerhand = [];
+			gameover = false;
+			blocking = false;
+			currentCard = 1;
+			
+			for (var i = 0; i < overlays.length; i++) {
+				overlays[i].resetDynamicallyChangedScreen();
+				if (overlays[i].screenDisplaying) {
+					overlays[i].screenDisplaying = false;
+				}
+			}
+		}
 
         shuffleDeck();
 
@@ -133,6 +149,7 @@
 
         function OverlayScreen(text) {
             this.text = text;
+			this.oldText = text;
             this.screenDisplaying = false;
 
             this.renderOverlay = function () {
@@ -144,6 +161,10 @@
 
                 centerString(this.text, 800, 600, 48);
             }
+			
+			this.resetDynamicallyChangedScreen = function() {
+				this.text = this.oldText;
+			}
         }
 
         function bust(hand) {
@@ -176,6 +197,10 @@
         }
 
         g.canvas.onmousedown = function (e) {
+			if (gameover) {
+				reset();
+			}
+		
             switch (g.ctx.getImageData(e.offsetX, e.offsetY, 1, 1).data[1]) {
                 case 128:
                     overlays[2].screenDisplaying = true;
@@ -236,7 +261,6 @@
         document.onkeydown = function (e) {
             // y = 89
             // n = 78
-            console.log(e.which);
             if (overlays[2].screenDisplaying) {
                 switch (e.which) {
                     case 89:
