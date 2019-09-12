@@ -306,9 +306,9 @@
             return sum;
         }
 
-        function centerString(string, boundingSizeW, boundingSizeH, fontsize) {
-            var offsetY = ((boundingSizeH / 2) - fontsize + 12)
-            var offsetX = (boundingSizeW / 2)-string.length*9;
+        function centerString(string, width, height, fontsize) {
+            var offsetY = ((height / 2) - fontsize/2)
+            var offsetX = (width/2)-string.length*(fontsize/5);
             g.drawString(string, offsetX, offsetY);
         }
 
