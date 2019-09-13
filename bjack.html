@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 
@@ -20,7 +20,8 @@
         var values = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
         var suits = ["hearts", "diamonds", "clubs", "spades"];
 
-        var overlays = [new OverlayScreen("Natural"), new OverlayScreen("Bust"), new OverlayScreen("Fold? (Y/N)"), new OverlayScreen("Dealer Bust"), new OverlayScreen("Dealer Natural"), new OverlayScreen("Dealer Wins"), new OverlayScreen("Player Wins")];
+        //var overlays = [, new OverlayScreen("Bust"), , new OverlayScreen("Dealer Bust"), new OverlayScreen("Dealer Natural"), new OverlayScreen("Dealer Wins"), new OverlayScreen("Player Wins"), new OverlayScreen("Tie")];
+        var overlays = { "bust": new OverlayScreen("Bust"), "natural": new OverlayScreen("Natural"), "fold": new OverlayScreen("Fold? (Y/N)"), "dealernatural": new OverlayScreen("Dealer Natural"), "dealerwin": new OverlayScreen("Dealer Wins"), "playerwin": new OverlayScreen("Player Wins"), "tie": new OverlayScreen("Tie") };
 
         var gameover = false;
 
@@ -34,22 +35,32 @@
                 deckindex++;
             }
         }
-		
-		function reset() {
-			shuffleDeck();
-			userhand = [];
-			dealerhand = [];
-			gameover = false;
-			blocking = false;
-			currentCard = 1;
-			
-			for (var i = 0; i < overlays.length; i++) {
-				overlays[i].resetDynamicallyChangedScreen();
-				if (overlays[i].screenDisplaying) {
-					overlays[i].screenDisplaying = false;
-				}
-			}
-		}
+
+        function reset() {
+            shuffleDeck();
+            userhand = [];
+            dealerhand = [];
+            gameover = false;
+            blocking = false;
+            currentCard = 1;
+
+            /*
+            for (var i = 0; i < overlays.length; i++) {
+                overlays[i].resetDynamicallyChangedScreen();
+                if (overlays[i].screenDisplaying) {
+                    overlays[i].screenDisplaying = false;
+                }
+            }
+            */
+
+            for (var key in overlays) {
+                var overlay = overlays[key];
+                overlay.resetDynamicallyChangedScreen();
+                if (overlay.screenDisplaying) {
+                    overlay.screenDisplaying = false;
+                }
+            }
+        }
 
         shuffleDeck();
 
@@ -71,11 +82,19 @@
                 userhand[i].render(((i + 1) * 170) - 50, 350, false);
             }
 
+            for (var key in overlays) {
+                var overlay = overlays[key];
+                if (overlay.screenDisplaying) {
+                    overlay.renderOverlay();
+                }
+            }
+            /*
             for (var i = 0; i < overlays.length; i++) {
                 if (overlays[i].screenDisplaying) {
                     overlays[i].renderOverlay();
                 }
             }
+            */
         }
 
         function shuffleDeck() {
@@ -105,7 +124,7 @@
                     g.setColor("white");
                     g.fillRect(x, y, 150, 200);
                     // color is assumed by the suit
-                    
+
                     switch (suit) {
                         case "hearts":
                         case "diamonds":
@@ -116,7 +135,7 @@
                             g.setColor("black");
                             break;
                     }
-                    
+
                     //g.fillRect(x + 10, y + 10, 20, 20);
                     g.setFont("96px arial");
                     g.drawString(value, x + 45, y + 125);
@@ -149,7 +168,7 @@
 
         function OverlayScreen(text) {
             this.text = text;
-			this.oldText = text;
+            this.oldText = text;
             this.screenDisplaying = false;
 
             this.renderOverlay = function () {
@@ -161,10 +180,10 @@
 
                 centerString(this.text, 800, 600, 48);
             }
-			
-			this.resetDynamicallyChangedScreen = function() {
-				this.text = this.oldText;
-			}
+
+            this.resetDynamicallyChangedScreen = function () {
+                this.text = this.oldText;
+            }
         }
 
         function bust(hand) {
@@ -197,63 +216,63 @@
         }
 
         g.canvas.onmousedown = function (e) {
-			if (gameover) {
-				reset();
-			}
-		
-            switch (g.ctx.getImageData(e.offsetX, e.offsetY, 1, 1).data[1]) {
-                case 128:
-                    overlays[2].screenDisplaying = true;
-                    break;
-                case 0:
-                    if (!blocking) {
-                        userhand[getOccupiedSlotsInHand(userhand)] = deck[currentCard];
-                        currentCard++;
-                        blocking = true;
-                    } else {
-                        console.log("action blocked");
-                    }
-
-                    if (blocking) {
-                        setTimeout(function () {
-
-                            if (gameover == false) {
-                                dealerhand[getOccupiedSlotsInHand(dealerhand)] = deck[currentCard];
-                            }
-                            if (bust(dealerhand)) {
-                                overlays[3].text += " (" + getSumInHand(dealerhand) + ")";
-                                overlays[3].screenDisplaying = true;
-                                gameover = true;
-                            } else if (natural(dealerhand)) {
-                                overlays[4].screenDisplaying = true;
-                                gameover = true;
-                            }
+            if (gameover) {
+                reset();
+            } else {
+                switch (g.ctx.getImageData(e.offsetX, e.offsetY, 1, 1).data[1]) {
+                    case 128:
+                        overlays["fold"].screenDisplaying = true;
+                        break;
+                    case 0:
+                        if (!blocking) {
+                            userhand[getOccupiedSlotsInHand(userhand)] = deck[currentCard];
                             currentCard++;
-                            blocking = false;
-                        }, 1000);
-                    }
+                            blocking = true;
+                        } else {
+                            console.log("action blocked");
+                        }
 
-                    if (bust(userhand)) {
-                        overlays[1].screenDisplaying = true;
-                        gameover = true;
+                        if (blocking) {
+                            setTimeout(function () {
+
+                                if (gameover == false) {
+                                    dealerhand[getOccupiedSlotsInHand(dealerhand)] = deck[currentCard];
+                                }
+                                if (bust(dealerhand)) {
+                                    overlays["playerwins"].text += " (" + getSumInHand(dealerhand) + ")";
+                                    overlays["playerwins"].screenDisplaying = true;
+                                    gameover = true;
+                                } else if (natural(dealerhand)) {
+                                    overlays["dealernatural"].screenDisplaying = true;
+                                    gameover = true;
+                                }
+                                currentCard++;
+                                blocking = false;
+                            }, 1000);
+                        }
+
+                        if (bust(userhand)) {
+                            overlays["bust"].screenDisplaying = true;
+                            gameover = true;
+                            break;
+                        } else if (natural(userhand)) {
+                            overlays["natural"].screenDisplaying = true;
+                            gameover = true;
+                            break;
+                        }
+                        /*
+                        if (bust(dealerhand)) {
+                            overlays[3].screenDisplaying = true;
+                            break;
+                        } else if (natural(dealerhand)) {
+                            overlays[4].screenDisplaying = true;
+                            break;
+                        }
+                        */
+                        //dealCard(userhand, true);
+                        //dealCard(dealerhand, false);
                         break;
-                    } else if (natural(userhand)) {
-                        overlays[0].screenDisplaying = true;
-                        gameover = true;
-                        break;
-                    }
-                    /*
-                    if (bust(dealerhand)) {
-                        overlays[3].screenDisplaying = true;
-                        break;
-                    } else if (natural(dealerhand)) {
-                        overlays[4].screenDisplaying = true;
-                        break;
-                    }
-                    */
-                    //dealCard(userhand, true);
-                    //dealCard(dealerhand, false);
-                    break;
+                }
             }
         }
 
@@ -261,22 +280,26 @@
         document.onkeydown = function (e) {
             // y = 89
             // n = 78
-            if (overlays[2].screenDisplaying) {
+            if (overlays["fold"].screenDisplaying) {
                 switch (e.which) {
                     case 89:
-                        overlays[2].screenDisplaying = false;
+                        overlays["fold"].screenDisplaying = false;
                         if (getSumInHand(userhand) > getSumInHand(dealerhand)) {
-                            overlays[6].text += " (" + getSumInHand(userhand) + " vs " + getSumInHand(dealerhand) + ")";
-                            overlays[6].screenDisplaying = true;
+                            overlays["playerwin"].text += " (" + getSumInHand(userhand) + " vs " + getSumInHand(dealerhand) + ")";
+                            overlays["playerwin"].screenDisplaying = true;
                             gameover = true;
-                        } else {
-                            overlays[5].text += " (" + getSumInHand(userhand) + " vs " + getSumInHand(dealerhand) + ")";
-                            overlays[5].screenDisplaying = true;
+                        } else if (getSumInHand(userhand) < getSumInHand(dealerhand)) {
+                            overlays["dealerwin"].text += " (" + getSumInHand(userhand) + " vs " + getSumInHand(dealerhand) + ")";
+                            overlays["dealerwin"].screenDisplaying = true;
+                            gameover = true;
+                        } else if (getSumInHand(userhand) == getSumInHand(dealerhand)) {
+                            overlays["tie"].text += " (" + getSumInHand(userhand) + " vs " + getSumInHand(dealerhand) + ")";
+                            overlays["tie"].screenDisplaying = true;
                             gameover = true;
                         }//?overlays[6].screenDisplaying = true : overlays[5].screenDisplaying = true;
                         break;
                     case 78:
-                        overlays[2].screenDisplaying = false;
+                        overlays["fold"].screenDisplaying = false;
                         break;
                 }
             }
