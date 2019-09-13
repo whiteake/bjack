@@ -21,13 +21,30 @@
         var suits = ["hearts", "diamonds", "clubs", "spades"];
 
         //var overlays = [, new OverlayScreen("Bust"), , new OverlayScreen("Dealer Bust"), new OverlayScreen("Dealer Natural"), new OverlayScreen("Dealer Wins"), new OverlayScreen("Player Wins"), new OverlayScreen("Tie")];
-        var overlays = { "bust": new OverlayScreen("Bust"), "natural": new OverlayScreen("Natural"), "fold": new OverlayScreen("Fold? (Y/N)"), "dealernatural": new OverlayScreen("Dealer Natural"), "dealerwin": new OverlayScreen("Dealer Wins"), "playerwin": new OverlayScreen("Player Wins"), "tie": new OverlayScreen("Tie") };
+        var overlays = {
+            "title": new OverlayScreen("Blackjack"), "bust": new OverlayScreen("Bust"), "natural": new OverlayScreen("Natural"), "fold": new OverlayScreen("Fold ? (Y / N)"), "dealerbust": new OverlayScreen("Dealer Bust"), "dealernatural": new OverlayScreen("Dealer Natural"), "dealerwin": new OverlayScreen("Dealer Wins"), "playerwin": new OverlayScreen("Player Wins"), "tie": new OverlayScreen("Tie")
+        };
 
         var gameover = false;
 
         var blocking = false;
 
         var currentCard = 1;
+
+        overlays["title"].renderOverlay = function () {
+            g.setColor("rgba(0, 0, 0, 0.5)");
+            g.fillRect(0, 0, 800, 600);
+            g.setFont("48px arial");
+            g.setColor("red");
+
+            g.setFont("72px arial");
+            centerString(this.text, 800, 600, 72);
+            g.setFont("36px arial");
+            centerString("(c) 2019 whiteake", 800, 600, 36, 48);
+            centerString("Click to start", 800, 600, 36, 96);
+        }
+
+        overlays["title"].screenDisplaying = true;
 
         for (var i = 0; i < values.length; i++) {
             for (var j = 0; j < suits.length; j++) {
@@ -219,6 +236,10 @@
             if (gameover) {
                 reset();
             } else {
+                if (overlays["title"].screenDisplaying) {
+                    overlays["title"].screenDisplaying = false;
+                }
+
                 switch (g.ctx.getImageData(e.offsetX, e.offsetY, 1, 1).data[1]) {
                     case 128:
                         overlays["fold"].screenDisplaying = true;
@@ -239,8 +260,8 @@
                                     dealerhand[getOccupiedSlotsInHand(dealerhand)] = deck[currentCard];
                                 }
                                 if (bust(dealerhand)) {
-                                    overlays["playerwins"].text += " (" + getSumInHand(dealerhand) + ")";
-                                    overlays["playerwins"].screenDisplaying = true;
+                                    overlays["dealerbust"].text += " (" + getSumInHand(dealerhand) + ")";
+                                    overlays["dealerbust"].screenDisplaying = true;
                                     gameover = true;
                                 } else if (natural(dealerhand)) {
                                     overlays["dealernatural"].screenDisplaying = true;
@@ -319,10 +340,10 @@
             return sum;
         }
 
-        function centerString(string, width, height, fontsize) {
-            var offsetY = ((height / 2) - fontsize / 2)
+        function centerString(string, width, height, fontsize, offsety = 0) {
+            var offsetY = ((height / 2) - fontsize / 2);
             var offsetX = (width / 2) - string.length * (fontsize / 5);
-            g.drawString(string, offsetX, offsetY);
+            g.drawString(string, offsetX, offsetY + offsety);
         }
 
         function tick() {
