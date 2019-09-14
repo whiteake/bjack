@@ -40,8 +40,7 @@
             g.setFont("72px arial");
             centerString(this.text, 800, 600, 72);
             g.setFont("36px arial");
-            centerString("(c) 2019 whiteake", 800, 600, 36, 48);
-            centerString("Click to start", 800, 600, 36, 96);
+            centerString("Click to start", 800, 600, 36, 48);
         }
 
         overlays["title"].screenDisplaying = true;
@@ -86,7 +85,7 @@
             g.fillRect(0, 0, 800, 600);
             g.setColor("green");
             g.fillPolygon([0, 600, 25, 300, 775, 300, 800, 600]);
-            g.setColor("blue");
+            g.setColor("rgb(0, 1, 255)");
             g.fillPolygon([620, 500, 630, 380, 730, 380, 740, 500]);
             g.setColor("black");
             g.drawPolygon([620, 500, 630, 380, 730, 380, 740, 500]);
@@ -96,7 +95,7 @@
             }
 
             for (var i = 0; i < getOccupiedSlotsInHand(userhand); i++) {
-                userhand[i].render(((i + 1) * 170) - 50, 350, false);
+                userhand[i].render(((i + 1) * 170) - 50, 350, 150, 200, false);
             }
 
             for (var key in overlays) {
@@ -129,37 +128,32 @@
             this.suit = suit;
             this.value = value;
 
-            this.render = function (x, y, facing) {
+            this.render = function (x, y, width = 150, height = 200, facing) {
                 this.x = x;
                 this.y = y;
                 g.setColor("rgba(0, 0, 0, 0.3)");
-                g.fillOval(x - 20, y + 190, 190, 20);
-                if (facing) {
-                    g.setColor("blue");
-                    g.fillRect(x, y, 150, 200); // will eventually replace with a texture, hopefully
-                } else {
-                    g.setColor("white");
-                    g.fillRect(x, y, 150, 200);
-                    // color is assumed by the suit
+                g.fillOval(x - 20, y + (width + 40), (width + 40), 20);
+                g.setColor("white");
+                g.fillRect(x, y, width, height);
+                // color is assumed by the suit
 
-                    switch (suit) {
-                        case "hearts":
-                        case "diamonds":
-                            g.setColor("red");
-                            break;
-                        case "spades":
-                        case "clubs":
-                            g.setColor("black");
-                            break;
-                    }
-
-                    //g.fillRect(x + 10, y + 10, 20, 20);
-                    g.setFont("96px arial");
-                    g.drawString(value, x + 45, y + 125);
+                switch (suit) {
+                    case "hearts":
+                    case "diamonds":
+                        g.setColor("red");
+                        break;
+                    case "spades":
+                    case "clubs":
+                        g.setColor("black");
+                        break;
                 }
+
+                //g.fillRect(x + 10, y + 10, 20, 20);
+                g.setFont("96px arial");
+                g.drawString(value, value == 10 ? x + 25 : x + 45, y + 125);
                 g.setColor("black");
                 g.setLineWidth(2);
-                g.drawRect(x, y, 150, 200);
+                g.drawRect(x, y, width, height);
             };
 
             this.renderFar = function (x, y) {
@@ -235,42 +229,37 @@
         g.canvas.onmousedown = function (e) {
             if (gameover) {
                 reset();
-            } else {
+            } else if (!blocking) {
                 if (overlays["title"].screenDisplaying) {
                     overlays["title"].screenDisplaying = false;
                 }
 
+            console.log(g.ctx.getImageData(e.offsetX, e.offsetY, 1, 1).data[1]);
                 switch (g.ctx.getImageData(e.offsetX, e.offsetY, 1, 1).data[1]) {
                     case 128:
                         overlays["fold"].screenDisplaying = true;
                         break;
-                    case 0:
-                        if (!blocking) {
-                            userhand[getOccupiedSlotsInHand(userhand)] = deck[currentCard];
+                    case 1:
+                        userhand[getOccupiedSlotsInHand(userhand)] = deck[currentCard];
+                        currentCard++;
+                        blocking = true;
+
+                        setTimeout(function () {
+
+                            if (gameover == false) {
+                                dealerhand[getOccupiedSlotsInHand(dealerhand)] = deck[currentCard];
+                            }
+                            if (bust(dealerhand)) {
+                                overlays["dealerbust"].text += " (" + getSumInHand(dealerhand) + ")";
+                                overlays["dealerbust"].screenDisplaying = true;
+                                gameover = true;
+                            } else if (natural(dealerhand)) {
+                                overlays["dealernatural"].screenDisplaying = true;
+                                gameover = true;
+                            }
                             currentCard++;
-                            blocking = true;
-                        } else {
-                            console.log("action blocked");
-                        }
-
-                        if (blocking) {
-                            setTimeout(function () {
-
-                                if (gameover == false) {
-                                    dealerhand[getOccupiedSlotsInHand(dealerhand)] = deck[currentCard];
-                                }
-                                if (bust(dealerhand)) {
-                                    overlays["dealerbust"].text += " (" + getSumInHand(dealerhand) + ")";
-                                    overlays["dealerbust"].screenDisplaying = true;
-                                    gameover = true;
-                                } else if (natural(dealerhand)) {
-                                    overlays["dealernatural"].screenDisplaying = true;
-                                    gameover = true;
-                                }
-                                currentCard++;
-                                blocking = false;
-                            }, 1000);
-                        }
+                            blocking = false;
+                        }, 1000);
 
                         if (bust(userhand)) {
                             overlays["bust"].screenDisplaying = true;
@@ -341,8 +330,10 @@
         }
 
         function centerString(string, width, height, fontsize, offsety = 0) {
+            const magicnumber = fontsize > 48 ? 4.5 : 5;
+
             var offsetY = ((height / 2) - fontsize / 2);
-            var offsetX = (width / 2) - string.length * (fontsize / 5);
+            var offsetX = (width / 2) - string.length * (fontsize / magicnumber);
             g.drawString(string, offsetX, offsetY + offsety);
         }
 
